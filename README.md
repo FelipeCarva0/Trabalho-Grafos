@@ -26,9 +26,3 @@ Após compilar:
 ```bash
 .\output\solucaoA.exe
 ```
-
-ou no PowerShell:
-
-```powershell
-.\src\output\solucaoA.exe
-```
