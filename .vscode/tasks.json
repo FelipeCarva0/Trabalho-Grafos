@@ -2,22 +2,20 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "build opencv",
             "type": "shell",
-            "label": "build",
-            "command": "g++",
+            "command": "powershell",
             "args": [
-                "-Wall",
-                "-Wextra",
-                "-g3",
-                "${file}",
-                "-o",
-                "${workspaceFolder}\\build\\${fileBasenameNoExtension}.exe"
+                "-Command",
+                "g++ -Wall -Wextra -g3 \"${file}\" -o \"${workspaceFolder}/build/${fileBasenameNoExtension}.exe\" $(pkg-config --cflags --libs opencv4)"
             ],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": ["$gcc"]
+            "problemMatcher": [
+                "$gcc"
+            ]
         }
     ]
 }
