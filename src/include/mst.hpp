@@ -9,10 +9,7 @@ using namespace std;
 using namespace cv;
 
 class MST {
-    private:
-        float k;
-        Mat imagem;
-
+    private: 
         struct Vertice {
             int lin, col;
             Vec3b cor; //RGB
@@ -30,8 +27,16 @@ class MST {
             }
         };
 
+        float k;
+
+        Mat imagem;
+
+        vector<Vertice> vertices;
+        vector<Aresta> arestas;
+
     public:
         MST(string &imagemPath, float k);
+        void construirGrafo();
         int calcularPeso(Vertice v1, Vertice v2);
         Mat segmentacao();
 };
