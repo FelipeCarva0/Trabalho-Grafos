@@ -5,6 +5,37 @@
 using namespace std;
 using namespace cv;
 
+MST::DisjointSet::DisjointSet(int n){
+    parent.resize(n);
+    size.resize(n, 1);
+    internal_diff.resize(n, 0.0f);
+
+    for (int i = 0; i < n; i++) {
+        parent[i] = i;
+    }
+}
+
+int MST::DisjointSet::find(int u){
+    if(parent[u] == u){
+        return u;
+    }
+
+    return find(parent[u]);
+}
+
+void MST::DisjointSet::unite(int u, int v){
+    int x = find(u);
+    int y = find(v);
+
+    if (x != y){
+        if(size[y] < size[x]){
+            swap(x, y);
+        }
+
+        parent[x] = y;
+    }
+}
+
 MST::MST(string &imagemPath, float k){
     imagem = imread(imagemPath, IMREAD_COLOR);
 
@@ -13,7 +44,11 @@ MST::MST(string &imagemPath, float k){
     }
 }
 
-void MST::construirGrafo(){ // usando o metodo "Grid Graphs" sessão 5 do artigo
+int MST::calcularPeso(Vertice v1, Vertice v2) {
+    return abs(v1.cor[0] - v2.cor[0]) + abs(v1.cor[1] - v2.cor[1]) + abs(v1.cor[2] - v2.cor[2]);
+}
+
+void MST::construirGrafo(){ // grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
     int lin = imagem.rows;
     int col = imagem.cols;
     int numeroVertices = lin*col;
@@ -42,20 +77,22 @@ void MST::construirGrafo(){ // usando o metodo "Grid Graphs" sessão 5 do artigo
     }
 }
 
-int MST::calcularPeso(Vertice v1, Vertice v2){
-    return abs(v1.cor[0] - v2.cor[0]) + abs(v1.cor[1] - v2.cor[1]) + abs(v1.cor[2] - v2.cor[2]);
-}
-
 Mat MST::segmentacao(){
 
     construirGrafo();
 
+    // Passo 0: ordena arestas por peso
     sort(arestas.begin(), arestas.end(), [](Aresta a, Aresta b) {
         return a.peso < b.peso;
     });
 
-    // união dos segmentos usando o algoritmo de Kruskal para encontrar a MST(sessão 4 do artigo)
+    // Passo 1: cada vértice começa no próprio componente
+    DisjointSet ds(vertices.size());
 
+    // Passo 2: Repitir o passo 3 até que todas as arestas sejam processadas
+
+
+    // Passo 4: Retornar a segmentação resultante
     return imagem; //por enquanto, depois tem que retornar a imagem segmentada
 }
 

@@ -12,12 +12,12 @@ class MST {
     private: 
         struct Vertice {
             int lin, col;
-            Vec3b cor; //RGB
+            Vec3b cor; // RGB
         };
 
         struct Aresta {
             int v1, v2;
-            int peso; //w
+            int peso; // w
 
             Aresta(int v1, int v2, int peso)
             {
@@ -27,9 +27,22 @@ class MST {
             }
         };
 
+        class DisjointSet {
+            private:
+                vector<int> parent;
+                vector<int> size;
+                vector<float> internal_diff;
+
+            public:
+                DisjointSet(int n);
+                int find(int u);
+                void unite(int u, int v);
+        };
+
         float k;
 
         Mat imagem;
+        Mat imagemSegmentada;
 
         vector<Vertice> vertices;
         vector<Aresta> arestas;
