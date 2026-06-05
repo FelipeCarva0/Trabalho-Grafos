@@ -11,19 +11,19 @@ using namespace cv;
 class MST {
     private: 
         struct Vertice {
-            int lin, col;
-            Vec3b cor; // RGB
+            int row, col;
+            Vec3b color; // RGB
         };
 
-        struct Aresta {
+        struct Edge {
             int v1, v2;
-            int peso; // w
+            int weight;
 
-            Aresta(int v1, int v2, int peso)
+            Edge(int v1, int v2, int weight)
             {
                 this->v1 = v1;
                 this->v2 = v2;
-                this->peso = peso;
+                this->weight = weight;
             }
         };
 
@@ -41,17 +41,17 @@ class MST {
 
         float k;
 
-        Mat imagem;
-        Mat imagemSegmentada;
+        Mat image;
+        Mat segmentedImage;
 
         vector<Vertice> vertices;
-        vector<Aresta> arestas;
+        vector<Edge> edges;
 
     public:
-        MST(string &imagemPath, float k);
-        void construirGrafo();
-        int calcularPeso(Vertice v1, Vertice v2);
-        Mat segmentacao();
+        MST(string &imagePath, float k);
+        void buildGraph();
+        int calculateWeight(Vertice v1, Vertice v2);
+        Mat segment();
 };
 
 #endif // __MST_HPP__

@@ -28,62 +28,63 @@ void MST::DisjointSet::unite(int u, int v){
     int y = find(v);
 
     if (x != y){
-        if(size[y] < size[x]){
+        if (size[y] < size[x]) {
             swap(x, y);
         }
 
         parent[x] = y;
+        size[y] += size[x];
     }
 }
 
-MST::MST(string &imagemPath, float k){
-    imagem = imread(imagemPath, IMREAD_COLOR);
+MST::MST(string &imagePath, float k){
+    image = imread(imagePath, IMREAD_COLOR);
 
-    if(imagem.empty()){
+    if(image.empty()){
         cout << "ERRO AO CARREGAR IMAGEM \n" << endl;
     }
 }
 
-int MST::calcularPeso(Vertice v1, Vertice v2) {
-    return abs(v1.cor[0] - v2.cor[0]) + abs(v1.cor[1] - v2.cor[1]) + abs(v1.cor[2] - v2.cor[2]);
+int MST::calculateWeight(Vertice v1, Vertice v2) {
+    return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
-void MST::construirGrafo(){ // grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
-    int lin = imagem.rows;
-    int col = imagem.cols;
-    int numeroVertices = lin*col;
+void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
+    int row = image.rows;
+    int col = image.cols;
+    int numeroVertices = row*col;
 
     vertices.resize(numeroVertices);
-    arestas.clear();
+    edges.clear();
 
-    for(int i = 0; i < lin; i++){
+    for(int i = 0; i < row; i++){
         for(int j = 0; j < col; j++){
-            vertices[i*col + j] = {i, j, imagem.at<Vec3b>(i, j)};
+            vertices[i*col + j] = {i, j, image.at<Vec3b>(i, j)};
         }
     }
 
-    for(int i = 0; i < lin; i++){
+    for(int i = 0; i < row; i++){
         for(int j = 0; j < col; j++){
 
             if(j < col - 1){
-                int peso = calcularPeso(vertices[i*col + j], vertices[i*col + (j+1)]);
-                arestas.push_back({i*col + j, i*col + (j+1), peso});
+                int peso = calculateWeight(vertices[i*col + j], vertices[i*col + (j+1)]);
+                edges.push_back({i*col + j, i*col + (j+1), peso});
             }
-            if(i < lin - 1){
-                int peso = calcularPeso(vertices[i*col + j], vertices[(i+1)*col + j]);
-                arestas.push_back({i*col + j, (i+1)*col + j, peso});
+            if(i < row - 1){
+                int peso = calculateWeight(vertices[i*col + j], vertices[(i+1)*col + j]);
+                edges.push_back({i*col + j, (i+1)*col + j, peso});
             }
         }
     }
 }
 
-Mat MST::segmentacao(){
+Mat MST::segment(){
 
-    construirGrafo();
+    buildGraph();
 
     // Passo 0: ordena arestas por peso
-    sort(arestas.begin(), arestas.end(), [](Aresta a, Aresta b) {
-        return a.peso < b.peso;
+    sort(edges.begin(), edges.end(), [](Edge a, Edge b) {
+        return a.weight < b.weight;
     });
 
     // Passo 1: cada vértice começa no próprio componente
@@ -93,13 +94,13 @@ Mat MST::segmentacao(){
 
 
     // Passo 4: Retornar a segmentação resultante
-    return imagem; //por enquanto, depois tem que retornar a imagem segmentada
+    return image; //por enquanto, depois tem que retornar a imagem segmentada
 }
 
 int main() {
-    string imagemPath = "assets/images/predio.jpg";
-    MST mst(imagemPath, 0.5);
-    mst.segmentacao();
+    string imagePath = "assets/images/building.jpg";
+    MST mst(imagePath, 0.5);
+    mst.segment();
     
     return 0;
 }
