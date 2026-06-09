@@ -34,9 +34,11 @@ class MST {
                 vector<float> internal_diff;
 
             public:
+                float getInternal_diff(int x);
+                int getSize(int x);
                 DisjointSet(int n);
                 int find(int u);
-                void unite(int u, int v);
+                void unite(int u, int v, int weight);
         };
 
         float k;
@@ -49,8 +51,10 @@ class MST {
 
     public:
         MST(string &imagePath, float k);
+        Mat colorSegments(DisjointSet& ds, int width, int height);
         void buildGraph();
-        int calculateWeight(Vertice v1, Vertice v2);
+        int calculateWeight(const Vertice& v1, const Vertice& v2);
+        float threshold(float k, int size);
         Mat segment();
 };
 
