@@ -5,6 +5,9 @@
 
 using namespace std;
 using namespace cv;
+namespace fs = std::filesystem;
+
+string imagePath = "assets/images/building.jpg";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -88,7 +91,8 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
     }
 }
 
-Mat MST::colorSegments(DisjointSet& ds, int width, int height){
+Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
+
     Mat result(height, width, CV_8UC3);
     unordered_map<int, Vec3b> colors;
 
@@ -101,20 +105,27 @@ Mat MST::colorSegments(DisjointSet& ds, int width, int height){
             int id = y * width + x;
             int root = ds.find(id);
 
-            auto it = colors.find(root);
+            Vec3b color;
 
-            if (it == colors.end()) {
-                Vec3b color(
-                    dist(rng),
-                    dist(rng),
-                    dist(rng)
-                );
+            if (mode == ColorMode::GRAYSCALE) {
 
-                colors[root] = color;
-                it = colors.find(root);
+                int gray = (root * 2654435761u) % 256;
+                color = Vec3b(gray, gray, gray);
+
+            } else {
+
+                auto it = colors.find(root);
+
+                if (it == colors.end()) {
+                    Vec3b c(dist(rng), dist(rng), dist(rng));
+                    colors[root] = c;
+                    it = colors.find(root);
+                }
+
+                color = it->second;
             }
 
-            result.at<Vec3b>(y, x) = it->second;
+            result.at<Vec3b>(y, x) = color;
         }
     }
 
@@ -157,17 +168,42 @@ Mat MST::segment(){
         }
     }
 
-    segmentedImage = colorSegments(ds, image.cols, image.rows);
-    imwrite("assets/images/result2.jpg", segmentedImage);
+    cv::Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
+    saveSegmentResult(rgb, imagePath, "rgb");
+
+    cv::Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
+    saveSegmentResult(gray, imagePath, "gray");
+
+    segmentedImage = rgb;
 
     // Passo 4: Retornar a segmentação resultante
-    return segmentedImage; //por enquanto, depois tem que retornar a imagem segmentada
+    return segmentedImage;
+}
+
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+    fs::path inputPath(imageName);
+
+    string baseName = inputPath.stem().string();
+    string ext = inputPath.extension().string();
+
+    if (ext.empty()) {
+        ext = ".png"; 
+    }
+
+    fs::path dir(outDir);
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
+
+    imwrite(outputPath.string(), img);
 }
 
 int main() {
-    string imagePath = "assets/images/baseball.jpg";
-    MST mst(imagePath, 80000.0f);
+    MST mst(imagePath, 8000.0f);
     mst.segment();
     
     return 0;
 }
+
