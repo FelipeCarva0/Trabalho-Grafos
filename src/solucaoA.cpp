@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/building.jpg";
+string imagePath = "assets/images/horse.jpg";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -58,7 +58,7 @@ MST::MST(string &imagePath, float k){
     }
 }
 
-int MST::calculateWeight(const Vertice& v1, const Vertice& v2) {
+int MST::calculateWeight(const Vertice& v1, const Vertice& v2){
     return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
@@ -89,6 +89,26 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
             }
         }
     }
+}
+
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+    fs::path inputPath(imageName);
+
+    string baseName = inputPath.stem().string();
+    string ext = inputPath.extension().string();
+
+    if (ext.empty()) {
+        ext = ".png"; 
+    }
+
+    fs::path dir(outDir);
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
+
+    imwrite(outputPath.string(), img);
 }
 
 Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
@@ -132,8 +152,7 @@ Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
     return result;
 }
 
-float MST::threshold(float k, int size)
-{
+float MST::threshold(float k, int size){
     return k/size;
 }
 
@@ -168,10 +187,10 @@ Mat MST::segment(){
         }
     }
 
-    cv::Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
+    Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
     saveSegmentResult(rgb, imagePath, "rgb");
 
-    cv::Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
+    Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
     saveSegmentResult(gray, imagePath, "gray");
 
     segmentedImage = rgb;
@@ -180,30 +199,9 @@ Mat MST::segment(){
     return segmentedImage;
 }
 
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
-    fs::path inputPath(imageName);
-
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
-
-    if (ext.empty()) {
-        ext = ".png"; 
-    }
-
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
-}
-
-int main() {
+int main(){
     MST mst(imagePath, 8000.0f);
     mst.segment();
     
     return 0;
 }
-

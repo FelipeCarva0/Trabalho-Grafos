@@ -57,8 +57,6 @@ class MST {
 
     public:
         MST(string &imagePath, float k);
-        Mat colorSegmentsRGB(DisjointSet& ds, int width, int height);
-        Mat colorSegmentsGray(DisjointSet& ds, int width, int height);
         Mat renderSegments(DisjointSet& ds, int width, int height, ColorMode mode);
         void buildGraph();
         int calculateWeight(const Vertice& v1, const Vertice& v2);
