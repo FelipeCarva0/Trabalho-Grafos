@@ -1,9 +1,13 @@
 #include "include/mst.hpp"
 #include <iostream>
 #include <filesystem>
+#include <random>
 
 using namespace std;
 using namespace cv;
+namespace fs = std::filesystem;
+
+string imagePath = "assets/images/horse.jpg";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -16,28 +20,37 @@ MST::DisjointSet::DisjointSet(int n){
 }
 
 int MST::DisjointSet::find(int u){
-    if(parent[u] == u){
-        return u;
+    if(parent[u] != u){
+        parent[u] = find(parent[u]);
     }
-
-    return find(parent[u]);
+    return parent[u];
 }
 
-void MST::DisjointSet::unite(int u, int v){
+void MST::DisjointSet::unite(int u, int v, int weight){
     int x = find(u);
     int y = find(v);
 
     if (x != y){
-        if (size[y] < size[x]) {
+        if (size[x] < size[y]) {
             swap(x, y);
         }
 
-        parent[x] = y;
-        size[y] += size[x];
+        parent[y] = x;
+        size[x] += size[y];
+        internal_diff[x] = max(max(internal_diff[x], internal_diff[y]), (float)weight);
     }
 }
 
+float MST::DisjointSet::getInternal_diff(int x){
+    return internal_diff[find(x)];
+}
+
+int MST::DisjointSet::getSize(int x){
+    return size[find(x)];
+}
+
 MST::MST(string &imagePath, float k){
+    this->k = k;
     image = imread(imagePath, IMREAD_COLOR);
 
     if(image.empty()){
@@ -45,7 +58,7 @@ MST::MST(string &imagePath, float k){
     }
 }
 
-int MST::calculateWeight(Vertice v1, Vertice v2) {
+int MST::calculateWeight(const Vertice& v1, const Vertice& v2){
     return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
@@ -78,6 +91,71 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
     }
 }
 
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+    fs::path inputPath(imageName);
+
+    string baseName = inputPath.stem().string();
+    string ext = inputPath.extension().string();
+
+    if (ext.empty()) {
+        ext = ".png"; 
+    }
+
+    fs::path dir(outDir);
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
+
+    imwrite(outputPath.string(), img);
+}
+
+Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
+
+    Mat result(height, width, CV_8UC3);
+    unordered_map<int, Vec3b> colors;
+
+    mt19937 rng(123);
+    uniform_int_distribution<int> dist(0, 255);
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+
+            int id = y * width + x;
+            int root = ds.find(id);
+
+            Vec3b color;
+
+            if (mode == ColorMode::GRAYSCALE) {
+
+                int gray = (root * 2654435761u) % 256;
+                color = Vec3b(gray, gray, gray);
+
+            } else {
+
+                auto it = colors.find(root);
+
+                if (it == colors.end()) {
+                    Vec3b c(dist(rng), dist(rng), dist(rng));
+                    colors[root] = c;
+                    it = colors.find(root);
+                }
+
+                color = it->second;
+            }
+
+            result.at<Vec3b>(y, x) = color;
+        }
+    }
+
+    return result;
+}
+
+float MST::threshold(float k, int size){
+    return k/size;
+}
+
 Mat MST::segment(){
 
     buildGraph();
@@ -91,15 +169,39 @@ Mat MST::segment(){
     DisjointSet ds(vertices.size());
 
     // Passo 2: Repitir o passo 3 até que todas as arestas sejam processadas
+    for(const Edge& edge : edges){
 
+        // Passo 3: Para cada aresta, verificar se os vértices pertencem a componentes diferentes
+        int x = ds.find(edge.v1); 
+        int y = ds.find(edge.v2);
+
+        if(x == y){
+            continue;
+        }
+
+        int mintX = (ds.getInternal_diff(x) + threshold(k, ds.getSize(x)));
+        int mintY = (ds.getInternal_diff(y) + threshold(k, ds.getSize(y)));
+
+        if(edge.weight <= min(mintX, mintY)){
+            ds.unite(x, y, edge.weight);
+        }
+    }
+
+    Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
+    saveSegmentResult(rgb, imagePath, "rgb");
+
+    Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
+    saveSegmentResult(gray, imagePath, "gray");
+
+    segmentedImage = rgb;
 
     // Passo 4: Retornar a segmentação resultante
-    return image; //por enquanto, depois tem que retornar a imagem segmentada
+    return segmentedImage;
 }
 
-int main() {
-    string imagePath = "assets/images/building.jpg";
-    MST mst(imagePath, 0.5);
+int main(){
+    std::cout << "Solução A" << std::endl;
+    MST mst(imagePath, 8000.0f);
     mst.segment();
     
     return 0;

@@ -1,1 +1,5 @@
-#.exe
+.exe
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+assets/output/*
+Makefile
