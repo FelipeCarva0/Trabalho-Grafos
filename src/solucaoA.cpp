@@ -200,7 +200,6 @@ Mat MST::segment(){
 }
 
 int main(){
-    std::cout << "Solução A" << std::endl;
     MST mst(imagePath, 8000.0f);
     mst.segment();
     
