@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/horse.jpg";
+string imagePath = "assets/images/cat.png";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
