@@ -120,6 +120,7 @@ Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
 
     return result;
 }
+
 Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height) {
 
     unordered_map<int, Vec3i> colorSum;

@@ -111,6 +111,55 @@ void saveSegmentResult(const Mat& img, const string& imageName, const string& su
     imwrite(outputPath.string(), img);
 }
 
+Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height){
+    Mat result(height, width, CV_8UC3);
+
+    unordered_map<int, Vec3d> colorSum;
+    unordered_map<int, int> pixelCount;
+
+    // Soma das cores de cada segmento
+    for(int y = 0; y < height; y++){
+        for(int x = 0; x < width; x++){
+
+            int id = y * width + x;
+            int root = ds.find(id);
+
+            Vec3b pixel = image.at<Vec3b>(y, x);
+
+            colorSum[root][0] += pixel[0];
+            colorSum[root][1] += pixel[1];
+            colorSum[root][2] += pixel[2];
+
+            pixelCount[root]++;
+        }
+    }
+
+    unordered_map<int, Vec3b> meanColor;
+
+    for(const auto& p : colorSum){
+
+        int root = p.first;
+
+        meanColor[root] = Vec3b(
+            static_cast<uchar>(p.second[0] / pixelCount[root]),
+            static_cast<uchar>(p.second[1] / pixelCount[root]),
+            static_cast<uchar>(p.second[2] / pixelCount[root])
+        );
+    }
+
+    for(int y = 0; y < height; y++){
+        for(int x = 0; x < width; x++){
+
+            int id = y * width + x;
+            int root = ds.find(id);
+
+            result.at<Vec3b>(y, x) = meanColor[root];
+        }
+    }
+
+    return result;
+}
+
 Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
 
     Mat result(height, width, CV_8UC3);
@@ -192,6 +241,9 @@ Mat MST::segment(){
 
     Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
     saveSegmentResult(gray, imagePath, "gray");
+
+    Mat mean = renderSegmentsByMeanColor(ds, image.cols, image.rows);
+    saveSegmentResult(mean, imagePath, "mean");
 
     segmentedImage = rgb;
 

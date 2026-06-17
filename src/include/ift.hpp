@@ -57,6 +57,7 @@ class IFT {
         Mat segment();
         int calculateWeight(const Vertice& v1, const Vertice& v2);
         Mat renderSegments(ColorMode mode);
+        Mat renderSegmentsByMeanColor();
         
 };
 
