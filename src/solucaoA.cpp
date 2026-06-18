@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/horse.jpg";
+string imagePath = "assets/images/baseball.jpg";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -192,6 +192,9 @@ Mat MST::segment(){
 
     Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
     saveSegmentResult(gray, imagePath, "gray");
+    
+    Mat mean = renderSegmentsByMeanColor(ds, image.cols, image.rows);
+    saveSegmentResult(mean, imagePath, "mean");
 
     segmentedImage = rgb;
 
@@ -199,8 +202,41 @@ Mat MST::segment(){
     return segmentedImage;
 }
 
+Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height) {
+
+    unordered_map<int, Vec3i> colorSum;
+    unordered_map<int, int>   pixelCount;
+
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int root = ds.find(y * width + x);
+            Vec3b pixel = image.at<Vec3b>(y, x);
+            colorSum[root][0] += pixel[0];
+            colorSum[root][1] += pixel[1];
+            colorSum[root][2] += pixel[2];
+            pixelCount[root]  += 1;
+        }
+    }
+
+    unordered_map<int, Vec3b> meanColor;
+    for (auto& [root, sum] : colorSum) {
+        int n = pixelCount[root];
+        meanColor[root] = Vec3b(sum[0]/n, sum[1]/n, sum[2]/n);
+    }
+
+    Mat result(height, width, CV_8UC3);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int root = ds.find(y * width + x);
+            result.at<Vec3b>(y, x) = meanColor[root];
+        }
+    }
+
+    return result;
+}
+
 int main(){
-    std::cout << "Solução A" << std::endl;
+    std::cout << "Solucao A" << std::endl;
     MST mst(imagePath, 8000.0f);
     mst.segment();
     
