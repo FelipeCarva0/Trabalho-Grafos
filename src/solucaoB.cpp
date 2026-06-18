@@ -1,4 +1,5 @@
-#include "include/mst.hpp"
+#include "include/mstB.hpp"
+
 #include <iostream>
 #include <filesystem>
 #include <random>
@@ -6,11 +7,32 @@
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
-string imagePath = "assets/images/horse.jpg";
+string imagePath = "assets/images/cat.png";
 
+//Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B"){
+    fs::path inputPath(imageName);
+
+    string baseName = inputPath.stem().string();
+    string ext = inputPath.extension().string();
+
+    if (ext.empty()) {
+        ext = ".png"; 
+    }
+
+    fs::path dir(outDir);
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    fs::path outputPath = dir / (baseName + "_B_" + suffix + ext);
+
+    imwrite(outputPath.string(), img);
+}
 
 //construtor da MST
 MST::MST(string &imagePath, float k){
+    this->imagePath = imagePath;
     this->k = k;
     image = imread(imagePath, IMREAD_COLOR);
 
@@ -21,8 +43,23 @@ MST::MST(string &imagePath, float k){
 
 
 //função recebe os vertices do grafo e calcula seu peso basaedo na diferença de cores de um pixel para o outro.
-int MST::calculateWeight(const Vertice& v1, const Vertice& v2){
-    return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
+int MST::calculateWeight(
+    const Vertice& v1,
+    const Vertice& v2)
+{
+    int db =
+        v1.color[0]-v2.color[0];
+
+    int dg =
+        v1.color[1]-v2.color[1];
+
+    int dr =
+        v1.color[2]-v2.color[2];
+
+    return sqrt(
+        db*db +
+        dg*dg +
+        dr*dr);
 }
 
 
@@ -56,27 +93,177 @@ void MST::buildGraph(){
     }
 }
 
+//brief Constrói a Árvore Geradora Mínima (MST) do grafo
+void MST::buildMST()
+{
+    mstEdges.clear();
 
-//Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B"){
-    fs::path inputPath(imageName);
+    sort(edges.begin(),
+         edges.end(),
+         [](const Edge& a, const Edge& b)
+         {
+             return a.weight < b.weight;
+         });
 
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
+    DisjointSet ds(vertices.size());
 
-    if (ext.empty()) {
-        ext = ".png"; 
+    for(const Edge& e : edges)
+    {
+        int x = ds.find(e.v1);
+        int y = ds.find(e.v2);
+
+        if(x != y)
+        {
+            mstEdges.push_back(e);
+            ds.unite(x,y,e.weight);
+        }
     }
 
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_B_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
+    cout << "MST criada com "
+         << mstEdges.size()
+         << " arestas" << endl;
 }
+
+
+//Computa a segmentação usando o limiar lambda
+Mat MST::computeQFZ(float lambda)
+{
+    DisjointSet ds(vertices.size());
+
+    for(const Edge& e : mstEdges)
+    {
+        if(e.weight > lambda)
+            break;
+
+        ds.unite(e.v1,e.v2,e.weight);
+    }
+
+    return renderSegmentsByMeanColor(
+                ds,
+                image.cols,
+                image.rows);
+}
+
+//Computa a segmentação usando o limiar lambda
+Mat MST::computeSaliencyMap()
+{
+    Mat saliency(
+        image.rows,
+        image.cols,
+        CV_8UC1,
+        Scalar(0));
+
+    int maxWeight = 1;
+
+    for(const Edge& e : mstEdges)
+        maxWeight =
+            max(maxWeight,e.weight);
+
+    for(const Edge& e : mstEdges)
+    {
+        int value =
+            (255 * e.weight) / maxWeight;
+
+        auto& v1 = vertices[e.v1];
+        auto& v2 = vertices[e.v2];
+
+        saliency.at<uchar>(
+            v1.row,
+            v1.col)
+        =
+        max(
+            saliency.at<uchar>(
+                v1.row,
+                v1.col),
+            (uchar)value);
+
+        saliency.at<uchar>(
+            v2.row,
+            v2.col)
+        =
+        max(
+            saliency.at<uchar>(
+                v2.row,
+                v2.col),
+            (uchar)value);
+    }
+
+    return saliency;
+}
+
+
+//Salva hierarquia de segmentações para diferentes limiares
+void MST::saveHierarchy()
+{
+    vector<int> levels =
+    {
+        1,
+        2,
+        3,
+        5,
+        10,
+        15,
+        20,
+        30,
+        40,
+        50,
+    };
+
+    fs::path inputPath(imagePath);
+    string baseName = inputPath.stem().string();
+
+    for(int lambda : levels)
+    {
+        DisjointSet ds(vertices.size());
+
+        for(const Edge& e : mstEdges)
+        {
+            if(e.weight > lambda)
+                break;
+
+            ds.unite(e.v1, e.v2, e.weight);
+        }
+
+        string rootDir =
+            "assets/output/B/" +
+            baseName;
+
+        saveSegmentResult(
+            renderSegments(
+                ds,
+                image.cols,
+                image.rows,
+                ColorMode::RGB),
+            imagePath,
+            "lambda_" + to_string(lambda),
+            rootDir + "/rgb"
+        );
+
+        saveSegmentResult(
+            renderSegmentsByMeanColor(
+                ds,
+                image.cols,
+                image.rows),
+            imagePath,
+            "lambda_" + to_string(lambda),
+            rootDir + "/mean"
+        );
+
+        saveSegmentResult(
+            renderSegments(
+                ds,
+                image.cols,
+                image.rows,
+                ColorMode::GRAYSCALE),
+            imagePath,
+            "lambda_" + to_string(lambda),
+            rootDir + "/gray"
+        );
+    }
+}
+
+
+
 
 
 //Salva a imagem colorida (fiel as cores originais), imagem colorida (cores aleatorias), imagem em tons de cinza.
@@ -121,6 +308,8 @@ Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
     return result;
 }
 
+
+//Renderiza a segmentação usando a cor média de cada segmento
 Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height) {
 
     unordered_map<int, Vec3i> colorSum;
@@ -188,52 +377,37 @@ void MST::DisjointSet::unite(int u, int v, int weight){
 
 
 //Segmenta a imagem em conjuntos disjuntos (inicialmente cada pixel representando um conjunto) e unifica os conjuntos compativeis
-Mat MST::segment(){
-
+//Executa o pipeline completo de segmentação
+Mat MST::segment()
+{
     buildGraph();
 
-    // Passo 1: ordena arestas por peso
-    sort(edges.begin(), edges.end(), [](Edge a, Edge b) {
-        return a.weight < b.weight;
-    });
+    buildMST();
 
-    
-    // Passo 2: cada vértice começa no próprio componente
-    DisjointSet ds(vertices.size());
+    saveHierarchy();
 
+    Mat saliency =
+        computeSaliencyMap();
 
-    float limiar = 35.0f;// define o valor de corte para a diferença de cores
+    fs::path inputPath(imagePath);
 
+    string baseName =
+        inputPath.stem().string();
 
-    // Passo 3: Para cada aresta, verificar se os vértices pertencem a componentes diferentes, e os une caso sim.
-    for(const Edge& edge : edges){
-    if (edge.weight > limiar) {
-            break;
-        } 
-       
-        int x = ds.find(edge.v1); 
-        int y = ds.find(edge.v2);
+    string ext =
+        inputPath.extension().string();
 
-        if(x == y){
-            continue;
-        }
+    string output =
+        "assets/output/B/" +
+        baseName +
+        "_saliency" +
+        ext;
 
-            ds.unite(x, y, edge.weight);
-        
-    }
+    imwrite(output,saliency);
 
-    Mat mean = renderSegmentsByMeanColor(ds, image.cols, image.rows);
-    saveSegmentResult(mean, imagePath, "mean");
+    segmentedImage =
+        computeQFZ(40);
 
-    Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
-    saveSegmentResult(rgb, imagePath, "rgb");
-
-    Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
-    saveSegmentResult(gray, imagePath, "gray");
-
-    segmentedImage = rgb;
-
-    // Passo 4: Retornar a segmentação resultante
     return segmentedImage;
 }
 
