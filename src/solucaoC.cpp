@@ -147,7 +147,7 @@ void IFT::buildGraph(){
     }
 }
 
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/C"){
     fs::path inputPath(imageName);
 
     string baseName = inputPath.stem().string();

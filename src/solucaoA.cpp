@@ -91,7 +91,7 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
     }
 }
 
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/A"){
     fs::path inputPath(imageName);
 
     string baseName = inputPath.stem().string();

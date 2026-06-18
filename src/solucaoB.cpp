@@ -58,7 +58,7 @@ void MST::buildGraph(){
 
 
 //Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B"){
     fs::path inputPath(imageName);
 
     string baseName = inputPath.stem().string();
