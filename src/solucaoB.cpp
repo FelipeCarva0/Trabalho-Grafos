@@ -7,7 +7,7 @@
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
-string imagePath = "assets/images/cat.png";
+string imagePath = "assets/images/lioness.jpg";
 
 //Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
 void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B"){

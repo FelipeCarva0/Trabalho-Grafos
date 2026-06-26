@@ -9,7 +9,7 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/cat.png";
+string imagePath = "assets/images/lioness.jpg";
 
 IFT::IFT(string &imagePath, int n){
     this->n = n;

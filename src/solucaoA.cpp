@@ -7,7 +7,7 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/cat.png";
+string imagePath = "assets/images/lioness.jpg";
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -252,7 +252,7 @@ Mat MST::segment(){
 }
 
 int main(){
-    MST mst(imagePath, 8000.0f);
+    MST mst(imagePath, 30000.0f);
     mst.segment();
     
     return 0;
