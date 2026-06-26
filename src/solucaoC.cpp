@@ -24,6 +24,26 @@ int IFT::calculateWeight(const Vertice& v1, const Vertice& v2){
     return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
+void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/C"){
+    fs::path inputPath(imageName);
+
+    string baseName = inputPath.stem().string();
+    string ext = inputPath.extension().string();
+
+    if (ext.empty()) {
+        ext = ".png"; 
+    }
+
+    fs::path dir(outDir);
+    if (!fs::exists(dir)) {
+        fs::create_directories(dir);
+    }
+
+    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
+
+    imwrite(outputPath.string(), img);
+}
+
 Mat IFT::segment() { // Algoritmo 3
     buildGraph();
 
@@ -87,8 +107,16 @@ Mat IFT::segment() { // Algoritmo 3
         }
     }
 
-    segmentedImage = renderSegmentsByMeanColor();
-    segmentedImage = renderSegments(IFT::ColorMode::RGB);
+    Mat meanColorImage = renderSegmentsByMeanColor();
+    saveSegmentResult(meanColorImage, imagePath, "mean");
+
+    Mat rgbImage = renderSegments(IFT::ColorMode::RGB);
+    saveSegmentResult(rgbImage, imagePath, "rgb");
+
+    Mat grayscaleImage = renderSegments(IFT::ColorMode::GRAYSCALE);
+    saveSegmentResult(grayscaleImage, imagePath, "grayscale");
+
+    segmentedImage = rgbImage;
 
     return segmentedImage;
 }
@@ -147,26 +175,6 @@ void IFT::buildGraph(){
     }
 }
 
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/C"){
-    fs::path inputPath(imageName);
-
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
-
-    if (ext.empty()) {
-        ext = ".png"; 
-    }
-
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
-}
-
 Mat IFT::renderSegments(ColorMode mode){
     Mat result(image.rows, image.cols, CV_8UC3);
 
@@ -215,8 +223,6 @@ Mat IFT::renderSegments(ColorMode mode){
         }
     }
 
-    saveSegmentResult(result, imagePath, "rgb");
-
     return result;
 }
 
@@ -253,13 +259,11 @@ Mat IFT::renderSegmentsByMeanColor() {
         }
     }
 
-    saveSegmentResult(result, imagePath, "mean");
-
     return result;
 }
 
 int main() {
-    IFT ift(imagePath, 100);
+    IFT ift(imagePath, 300);
     ift.segment();
 
     return 0;
