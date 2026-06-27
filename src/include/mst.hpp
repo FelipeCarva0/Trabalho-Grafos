@@ -49,6 +49,8 @@ class MST {
 
         float k;
 
+        string imagePath;
+
         Mat image;
         Mat segmentedImage;
 

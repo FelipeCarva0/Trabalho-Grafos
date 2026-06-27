@@ -2,12 +2,16 @@
 #include <iostream>
 #include <filesystem>
 #include <random>
+#include "include/utils.hpp"
+#include "include/mst.hpp"
 
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/horse.jpg";
+//string imagePath = "assets/images/lioness.jpg";
+
+//--- Disjoint Set ---
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -37,7 +41,7 @@ void MST::DisjointSet::unite(int u, int v, int weight){
 
         parent[y] = x;
         size[x] += size[y];
-        internal_diff[x] = max(max(internal_diff[x], internal_diff[y]), (float)weight);
+        internal_diff[x] = max({internal_diff[x], internal_diff[y], (float)weight});
     }
 }
 
@@ -49,9 +53,13 @@ int MST::DisjointSet::getSize(int x){
     return size[find(x)];
 }
 
+// --- MST ---
+
 MST::MST(string &imagePath, float k){
     this->k = k;
     image = imread(imagePath, IMREAD_COLOR);
+
+    this->imagePath = imagePath;
 
     if(image.empty()){
         cout << "ERRO AO CARREGAR IMAGEM \n" << endl;
@@ -91,24 +99,53 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
     }
 }
 
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output"){
-    fs::path inputPath(imageName);
+Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height){
+    Mat result(height, width, CV_8UC3);
 
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
+    unordered_map<int, Vec3d> colorSum;
+    unordered_map<int, int> pixelCount;
 
-    if (ext.empty()) {
-        ext = ".png"; 
+    // Soma das cores de cada segmento
+    for(int y = 0; y < height; y++){
+        for(int x = 0; x < width; x++){
+
+            int id = y * width + x;
+            int root = ds.find(id);
+
+            Vec3b pixel = image.at<Vec3b>(y, x);
+
+            colorSum[root][0] += pixel[0];
+            colorSum[root][1] += pixel[1];
+            colorSum[root][2] += pixel[2];
+
+            pixelCount[root]++;
+        }
     }
 
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
+    unordered_map<int, Vec3b> meanColor;
+
+    for(const auto& p : colorSum){
+
+        int root = p.first;
+
+        meanColor[root] = Vec3b(
+            static_cast<uchar>(p.second[0] / pixelCount[root]),
+            static_cast<uchar>(p.second[1] / pixelCount[root]),
+            static_cast<uchar>(p.second[2] / pixelCount[root])
+        );
     }
 
-    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
+    for(int y = 0; y < height; y++){
+        for(int x = 0; x < width; x++){
 
-    imwrite(outputPath.string(), img);
+            int id = y * width + x;
+            int root = ds.find(id);
+
+            result.at<Vec3b>(y, x) = meanColor[root];
+        }
+    }
+
+    return result;
 }
 
 Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
@@ -188,10 +225,13 @@ Mat MST::segment(){
     }
 
     Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
-    saveSegmentResult(rgb, imagePath, "rgb");
+    saveSegmentResult(rgb, imagePath, "rgb", "assets/output/A");
 
     Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
-    saveSegmentResult(gray, imagePath, "gray");
+    saveSegmentResult(gray, imagePath, "gray", "assets/output/A");
+
+    Mat mean = renderSegmentsByMeanColor(ds, image.cols, image.rows);
+    saveSegmentResult(mean, imagePath, "mean", "assets/output/A");
 
     segmentedImage = rgb;
 
@@ -199,9 +239,9 @@ Mat MST::segment(){
     return segmentedImage;
 }
 
-int main(){
-    MST mst(imagePath, 8000.0f);
+/*int main(){
+    MST mst(imagePath, 30000.0f);
     mst.segment();
     
     return 0;
-}
+}*/

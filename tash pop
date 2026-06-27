@@ -1,0 +1,26 @@
+*[33m-[m[33m.[m   [33m5579612[m[33m ([m[1;35mrefs/stash[m[33m)[m WIP on main: 0abfc9f Imagens em escala de cinza segmentadas
+[31m|[m[32m\[m [33m\[m  
+[31m|[m [32m|[m * [33m7a0b14f[m untracked files on main: 0abfc9f Imagens em escala de cinza segmentadas
+[31m|[m * [33m53ce98a[m index on main: 0abfc9f Imagens em escala de cinza segmentadas
+[31m|[m[31m/[m  
+* [33m0abfc9f[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Imagens em escala de cinza segmentadas
+* [33m895e487[m Imagens das soluções
+* [33m7f59ce5[m Imagens de cada solução
+* [33m97e7325[m Implementação da soluçãoB(revisar)
+* [33m9a9e49c[m Unificação de branches
+* [33md136633[m[33m ([m[1;31morigin/SoluçãoC[m[33m)[m Solução C correção na função de segmentação
+* [33m0c51a7f[m Solução C quase finalizada
+* [33m843a279[m criação da classe IFT
+*   [33m43dd910[m Solução B - 1
+[34m|[m[35m\[m  
+[34m|[m * [33m6b6fcd0[m Update .gitignore
+[34m|[m * [33m5e9fafc[m commit solução B  - 1
+* [35m|[m   [33m9b31ec4[m Merge pull request #2 from FelipeCarva0/SolucaoA-Thiago
+[36m|[m[1;31m\[m [35m\[m  
+[36m|[m [1;31m|[m [35m|[m * [33md2d91d2[m[33m ([m[1;31morigin/FelipeCarvalho[m[33m)[m coisas
+[36m|[m [1;31m|[m [35m|[m[35m/[m  
+[36m|[m [1;31m|[m * [33ma618274[m Ajeitando o make file
+[36m|[m [1;31m|[m * [33m97a2853[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mSolucaoA-Thiago[m[33m, [m[1;31morigin/SolucaoA-Thiago[m[33m)[m simples mudanças
+[36m|[m [1;31m|[m * [33mc268fe8[m segmentação em gray scale
+[36m|[m [1;31m|[m * [33m35ba12b[m Solução A segmentação completa
+[36m|[m [1;31m|[m[1;31m/[m  
