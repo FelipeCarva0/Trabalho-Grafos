@@ -3,37 +3,18 @@
 #include <iostream>
 #include <filesystem>
 #include <random>
+#include "include/utils.hpp"
+#include "include/mstB.hpp" 
 
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
-string imagePath = "assets/images/lioness.jpg";
 
-//Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B"){
-    fs::path inputPath(imageName);
-
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
-
-    if (ext.empty()) {
-        ext = ".png"; 
-    }
-
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_B_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
-}
-
-//construtor da MST
-MST::MST(string &imagePath, float k){
+//construtor da MSTB
+MSTB::MSTB(string &imagePath, int Lambda){
     this->imagePath = imagePath;
-    this->k = k;
+    this->Lambda = Lambda;
+
     image = imread(imagePath, IMREAD_COLOR);
 
     if(image.empty()){
@@ -41,9 +22,8 @@ MST::MST(string &imagePath, float k){
     }
 }
 
-
 //função recebe os vertices do grafo e calcula seu peso basaedo na diferença de cores de um pixel para o outro.
-int MST::calculateWeight(
+int MSTB::calculateWeight(
     const Vertice& v1,
     const Vertice& v2)
 {
@@ -62,9 +42,8 @@ int MST::calculateWeight(
         dr*dr);
 }
 
-
 //Cria o grafo inicial e define os de pesos de suas arestas.
-void MST::buildGraph(){
+void MSTB::buildGraph(){
     int row = image.rows;
     int col = image.cols;
     int numeroVertices = row*col;
@@ -94,7 +73,7 @@ void MST::buildGraph(){
 }
 
 //brief Constrói a Árvore Geradora Mínima (MST) do grafo
-void MST::buildMST()
+void MSTB::buildMST()
 {
     mstEdges.clear();
 
@@ -118,15 +97,10 @@ void MST::buildMST()
             ds.unite(x,y,e.weight);
         }
     }
-
-    cout << "MST criada com "
-         << mstEdges.size()
-         << " arestas" << endl;
 }
 
-
 //Computa a segmentação usando o limiar lambda
-Mat MST::computeQFZ(float lambda)
+Mat MSTB::computeQFZ(int lambda)
 {
     DisjointSet ds(vertices.size());
 
@@ -138,14 +112,15 @@ Mat MST::computeQFZ(float lambda)
         ds.unite(e.v1,e.v2,e.weight);
     }
 
-    return renderSegmentsByMeanColor(
+    return renderSegments(
                 ds,
                 image.cols,
-                image.rows);
+                image.rows,
+                ColorMode::RGB);
 }
 
 //Computa a segmentação usando o limiar lambda
-Mat MST::computeSaliencyMap()
+Mat MSTB::computeSaliencyMap()
 {
     Mat saliency(
         image.rows,
@@ -191,9 +166,8 @@ Mat MST::computeSaliencyMap()
     return saliency;
 }
 
-
 //Salva hierarquia de segmentações para diferentes limiares
-void MST::saveHierarchy()
+void MSTB::saveHierarchy()
 {
     vector<int> levels =
     {
@@ -224,9 +198,7 @@ void MST::saveHierarchy()
             ds.unite(e.v1, e.v2, e.weight);
         }
 
-        string rootDir =
-            "assets/output/B/" +
-            baseName;
+        string rootDir = "assets/output/B/" + baseName;
 
         saveSegmentResult(
             renderSegments(
@@ -240,10 +212,11 @@ void MST::saveHierarchy()
         );
 
         saveSegmentResult(
-            renderSegmentsByMeanColor(
+            renderSegments(
                 ds,
                 image.cols,
-                image.rows),
+                image.rows,
+                ColorMode::MEAN_COLOR),
             imagePath,
             "lambda_" + to_string(lambda),
             rootDir + "/mean"
@@ -262,90 +235,141 @@ void MST::saveHierarchy()
     }
 }
 
-
-
-
-
-//Salva a imagem colorida (fiel as cores originais), imagem colorida (cores aleatorias), imagem em tons de cinza.
-Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
+//Salva a imagem colorida (fiel as cores originais), imagem colorida (cores aleatorias), 
+//imagem em tons de cinza e imagem com a cor média de cada segmento.
+Mat MSTB::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode)
+{
+    const int total = width * height;
 
     Mat result(height, width, CV_8UC3);
-    unordered_map<int, Vec3b> colors;
-                
-    mt19937 rng(123);
-    uniform_int_distribution<int> dist(0, 255);
 
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
+    // Calcula o representante de cada pixel apenas uma vez
+    vector<int> roots(total);
 
-            int id = y * width + x;
-            int root = ds.find(id);
+    for (int i = 0; i < total; i++)
+        roots[i] = ds.find(i);
 
-            Vec3b color;
+    switch (mode)
+    {
+        case ColorMode::GRAYSCALE:
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
 
-            if (mode == ColorMode::GRAYSCALE) {
+                for (int x = 0; x < width; x++)
+                {
+                    int root = roots[y * width + x];
 
-                int gray = (root * 2654435761u) % 256;
-                color = Vec3b(gray, gray, gray);
+                    uchar gray = static_cast<uchar>(
+                        (root * 2654435761u) & 255
+                    );
 
-            } else {
-
-                auto it = colors.find(root);
-
-                if (it == colors.end()) {
-                    Vec3b c(dist(rng), dist(rng), dist(rng));
-                    colors[root] = c;
-                    it = colors.find(root); 
+                    dst[x] = Vec3b(gray, gray, gray);
                 }
-
-                color = it->second;
             }
 
-            result.at<Vec3b>(y, x) = color;
+            break;
+        }
+
+        case ColorMode::RGB:
+        {
+            unordered_map<int, Vec3b> colors;
+            colors.reserve(total / 4);
+
+            mt19937 rng(123);
+            uniform_int_distribution<int> dist(0, 255);
+
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int root = roots[y * width + x];
+
+                    auto [it, inserted] = colors.try_emplace(root);
+
+                    if (inserted)
+                    {
+                        it->second = Vec3b(
+                            dist(rng),
+                            dist(rng),
+                            dist(rng)
+                        );
+                    }
+
+                    dst[x] = it->second;
+                }
+            }
+
+            break;
+        }
+
+        case ColorMode::MEAN_COLOR:
+        {
+            unordered_map<int, Vec3i> sums;
+            unordered_map<int, int> counts;
+
+            sums.reserve(total / 4);
+            counts.reserve(total / 4);
+
+            // Soma das cores de cada segmento
+            for (int y = 0; y < height; y++)
+            {
+                const Vec3b* src = image.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int root = roots[y * width + x];
+
+                    Vec3i& s = sums[root];
+
+                    s[0] += src[x][0];
+                    s[1] += src[x][1];
+                    s[2] += src[x][2];
+
+                    counts[root]++;
+                }
+            }
+
+            unordered_map<int, Vec3b> meanColor;
+            meanColor.reserve(sums.size());
+
+            for (const auto& [root, sum] : sums)
+            {
+                int n = counts[root];
+
+                meanColor.emplace(
+                    root,
+                    Vec3b(
+                        sum[0] / n,
+                        sum[1] / n,
+                        sum[2] / n
+                    )
+                );
+            }
+
+            // Renderização
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    dst[x] = meanColor[roots[y * width + x]];
+                }
+            }
+
+            break;
         }
     }
 
     return result;
 }
 
-
-//Renderiza a segmentação usando a cor média de cada segmento
-Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height) {
-
-    unordered_map<int, Vec3i> colorSum;
-    unordered_map<int, int>   pixelCount;
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int root = ds.find(y * width + x);
-            Vec3b pixel = image.at<Vec3b>(y, x);
-            colorSum[root][0] += pixel[0];
-            colorSum[root][1] += pixel[1];
-            colorSum[root][2] += pixel[2];
-            pixelCount[root]  += 1;
-        }
-    }
-
-    unordered_map<int, Vec3b> meanColor;
-    for (auto& [root, sum] : colorSum) {
-        int n = pixelCount[root];
-        meanColor[root] = Vec3b(sum[0]/n, sum[1]/n, sum[2]/n);
-    }
-
-    Mat result(height, width, CV_8UC3);
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int root = ds.find(y * width + x);
-            result.at<Vec3b>(y, x) = meanColor[root];
-        }
-    }
-
-    return result;
-}
-
-
-//conjunto de funções auxiliares da função: MST::segment
-MST::DisjointSet::DisjointSet(int n){
+//conjunto de funções auxiliares da função: MSTB::segment
+MSTB::DisjointSet::DisjointSet(int n){
     parent.resize(n);
     size.resize(n, 1);
     internal_diff.resize(n, 0.0f);
@@ -354,13 +378,13 @@ MST::DisjointSet::DisjointSet(int n){
         parent[i] = i;
     }
 }
-int MST::DisjointSet::find(int u){
+int MSTB::DisjointSet::find(int u){
     if(parent[u] != u){
         parent[u] = find(parent[u]);
     }
     return parent[u];
 }
-void MST::DisjointSet::unite(int u, int v, int weight){
+void MSTB::DisjointSet::unite(int u, int v, int weight){
     int x = find(u);
     int y = find(v);
 
@@ -371,14 +395,13 @@ void MST::DisjointSet::unite(int u, int v, int weight){
 
         parent[y] = x;
         size[x] += size[y];
-        internal_diff[x] = max(max(internal_diff[x], internal_diff[y]), (float)weight);
+        internal_diff[x] = max({internal_diff[x], internal_diff[y], (float)weight});
     }
 }
 
-
 //Segmenta a imagem em conjuntos disjuntos (inicialmente cada pixel representando um conjunto) e unifica os conjuntos compativeis
 //Executa o pipeline completo de segmentação
-Mat MST::segment()
+Mat MSTB::segment()
 {
     buildGraph();
 
@@ -386,35 +409,19 @@ Mat MST::segment()
 
     saveHierarchy();
 
-    Mat saliency =
-        computeSaliencyMap();
+    Mat saliency = computeSaliencyMap();
 
     fs::path inputPath(imagePath);
 
-    string baseName =
-        inputPath.stem().string();
+    string baseName = inputPath.stem().string();
 
-    string ext =
-        inputPath.extension().string();
+    string ext = inputPath.extension().string();
 
-    string output =
-        "assets/output/B/" +
-        baseName +
-        "_saliency" +
-        ext;
+    string output = "assets/output/B/" + baseName + "_saliency" + ext;
 
     imwrite(output,saliency);
 
-    segmentedImage =
-        computeQFZ(40);
+    segmentedImage = computeQFZ(Lambda);
 
     return segmentedImage;
 }
-
-int main() {
-    std::cout << "Solução B" << std::endl;
-    MST mst(imagePath, 0);//o segundo valor não é utilizado na alternativa B.
-    mst.segment();
-    
-    return 0;
-} 

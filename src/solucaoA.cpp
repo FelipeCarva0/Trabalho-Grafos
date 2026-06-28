@@ -2,12 +2,14 @@
 #include <iostream>
 #include <filesystem>
 #include <random>
+#include "include/utils.hpp"
+#include "include/mst.hpp"
 
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-string imagePath = "assets/images/lioness.jpg";
+//--- Disjoint Set ---
 
 MST::DisjointSet::DisjointSet(int n){
     parent.resize(n);
@@ -37,7 +39,7 @@ void MST::DisjointSet::unite(int u, int v, int weight){
 
         parent[y] = x;
         size[x] += size[y];
-        internal_diff[x] = max(max(internal_diff[x], internal_diff[y]), (float)weight);
+        internal_diff[x] = max({internal_diff[x], internal_diff[y], (float)weight});
     }
 }
 
@@ -49,8 +51,11 @@ int MST::DisjointSet::getSize(int x){
     return size[find(x)];
 }
 
+// --- MST ---
+
 MST::MST(string &imagePath, float k){
     this->k = k;
+    this->imagePath = imagePath;
     image = imread(imagePath, IMREAD_COLOR);
 
     if(image.empty()){
@@ -62,7 +67,8 @@ int MST::calculateWeight(const Vertice& v1, const Vertice& v2){
     return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
-void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
+// Grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
+void MST::buildGraph(){
     int row = image.rows;
     int col = image.cols;
     int numeroVertices = row*col;
@@ -89,116 +95,6 @@ void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 
             }
         }
     }
-}
-
-void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/A"){
-    fs::path inputPath(imageName);
-
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
-
-    if (ext.empty()) {
-        ext = ".png"; 
-    }
-
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
-}
-
-Mat MST::renderSegmentsByMeanColor(DisjointSet& ds, int width, int height){
-    Mat result(height, width, CV_8UC3);
-
-    unordered_map<int, Vec3d> colorSum;
-    unordered_map<int, int> pixelCount;
-
-    // Soma das cores de cada segmento
-    for(int y = 0; y < height; y++){
-        for(int x = 0; x < width; x++){
-
-            int id = y * width + x;
-            int root = ds.find(id);
-
-            Vec3b pixel = image.at<Vec3b>(y, x);
-
-            colorSum[root][0] += pixel[0];
-            colorSum[root][1] += pixel[1];
-            colorSum[root][2] += pixel[2];
-
-            pixelCount[root]++;
-        }
-    }
-
-    unordered_map<int, Vec3b> meanColor;
-
-    for(const auto& p : colorSum){
-
-        int root = p.first;
-
-        meanColor[root] = Vec3b(
-            static_cast<uchar>(p.second[0] / pixelCount[root]),
-            static_cast<uchar>(p.second[1] / pixelCount[root]),
-            static_cast<uchar>(p.second[2] / pixelCount[root])
-        );
-    }
-
-    for(int y = 0; y < height; y++){
-        for(int x = 0; x < width; x++){
-
-            int id = y * width + x;
-            int root = ds.find(id);
-
-            result.at<Vec3b>(y, x) = meanColor[root];
-        }
-    }
-
-    return result;
-}
-
-Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
-
-    Mat result(height, width, CV_8UC3);
-    unordered_map<int, Vec3b> colors;
-
-    mt19937 rng(123);
-    uniform_int_distribution<int> dist(0, 255);
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-
-            int id = y * width + x;
-            int root = ds.find(id);
-
-            Vec3b color;
-
-            if (mode == ColorMode::GRAYSCALE) {
-
-                int gray = (root * 2654435761u) % 256;
-                color = Vec3b(gray, gray, gray);
-
-            } else {
-
-                auto it = colors.find(root);
-
-                if (it == colors.end()) {
-                    Vec3b c(dist(rng), dist(rng), dist(rng));
-                    colors[root] = c;
-                    it = colors.find(root);
-                }
-
-                color = it->second;
-            }
-
-            result.at<Vec3b>(y, x) = color;
-        }
-    }
-
-    return result;
 }
 
 float MST::threshold(float k, int size){
@@ -237,13 +133,13 @@ Mat MST::segment(){
     }
 
     Mat rgb = renderSegments(ds, image.cols, image.rows, MST::ColorMode::RGB);
-    saveSegmentResult(rgb, imagePath, "rgb");
+    saveSegmentResult(rgb, imagePath, "rgb", "assets/output/A");
 
     Mat gray = renderSegments(ds, image.cols, image.rows, MST::ColorMode::GRAYSCALE);
-    saveSegmentResult(gray, imagePath, "gray");
+    saveSegmentResult(gray, imagePath, "gray", "assets/output/A");
 
-    Mat mean = renderSegmentsByMeanColor(ds, image.cols, image.rows);
-    saveSegmentResult(mean, imagePath, "mean");
+    Mat mean = renderSegments(ds, image.cols, image.rows, MST::ColorMode::MEAN_COLOR);
+    saveSegmentResult(mean, imagePath, "mean", "assets/output/A");
 
     segmentedImage = rgb;
 
@@ -251,9 +147,132 @@ Mat MST::segment(){
     return segmentedImage;
 }
 
-int main(){
-    MST mst(imagePath, 30000.0f);
-    mst.segment();
-    
-    return 0;
+//--- Renderizar segmentos ---
+
+Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
+    Mat result(height, width, CV_8UC3);
+
+    const int total = width * height;
+
+    // Guarda o representante de cada pixel
+    vector<int> roots(total);
+    for (int i = 0; i < total; i++)
+        roots[i] = ds.find(i);
+
+    switch (mode)
+    {
+        case ColorMode::GRAYSCALE:
+        {
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int id = y * width + x;
+                    int gray = (roots[id] * 2654435761u) & 255;
+
+                    dst[x] = Vec3b(gray, gray, gray);
+                }
+            }
+
+            break;
+        }
+
+        case ColorMode::RGB:
+        {
+            unordered_map<int, Vec3b> colors;
+            colors.reserve(total / 4);
+
+            mt19937 rng(123);
+            uniform_int_distribution<int> dist(0, 255);
+
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int id = y * width + x;
+                    int root = roots[id];
+
+                    auto [it, inserted] = colors.try_emplace(root);
+
+                    if (inserted)
+                    {
+                        it->second = Vec3b(
+                            dist(rng),
+                            dist(rng),
+                            dist(rng)
+                        );
+                    }
+
+                    dst[x] = it->second;
+                }
+            }
+
+            break;
+        }
+
+        case ColorMode::MEAN_COLOR:
+        {
+            unordered_map<int, Vec3i> sums;
+            unordered_map<int, int> counts;
+            unordered_map<int, Vec3b> meanColors;
+
+            sums.reserve(total / 4);
+            counts.reserve(total / 4);
+            meanColors.reserve(total / 4);
+
+            // Soma das cores
+            for (int y = 0; y < height; y++)
+            {
+                const Vec3b* src = image.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int id = y * width + x;
+                    int root = roots[id];
+
+                    Vec3i& s = sums[root];
+
+                    s[0] += src[x][0];
+                    s[1] += src[x][1];
+                    s[2] += src[x][2];
+
+                    counts[root]++;
+                }
+            }
+
+            // Calcula média
+            for (const auto& p : sums)
+            {
+                int root = p.first;
+                const Vec3i& s = p.second;
+                int n = counts[root];
+
+                meanColors[root] = Vec3b(
+                    s[0] / n,
+                    s[1] / n,
+                    s[2] / n
+                );
+            }
+
+            // Gera imagem
+            for (int y = 0; y < height; y++)
+            {
+                Vec3b* dst = result.ptr<Vec3b>(y);
+
+                for (int x = 0; x < width; x++)
+                {
+                    int id = y * width + x;
+                    dst[x] = meanColors[roots[id]];
+                }
+            }
+
+            break;
+        }
+    }
+
+    return result;
 }

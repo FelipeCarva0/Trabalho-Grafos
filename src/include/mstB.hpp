@@ -6,11 +6,15 @@
 #include <string>
 #include <unordered_map>
 
-class MST {
+using namespace std;
+using namespace cv;
+
+class MSTB {
 public:
     enum class ColorMode {
         RGB,
-        GRAYSCALE
+        GRAYSCALE,
+        MEAN_COLOR
     };
 
     struct Vertice {
@@ -27,9 +31,9 @@ public:
 
     class DisjointSet {
     public:
-        std::vector<int> parent;
-        std::vector<int> size;
-        std::vector<float> internal_diff;
+        vector<int> parent;
+        vector<int> size;
+        vector<float> internal_diff;
 
         DisjointSet(int n);
 
@@ -38,22 +42,23 @@ public:
     };
 
 private:
-    std::string imagePath;
-    float k;
+    string imagePath;
 
-    cv::Mat image;
-    cv::Mat segmentedImage;
+    Mat image;
+    Mat segmentedImage;
 
-    std::vector<Vertice> vertices;
-    std::vector<Edge> edges;
+    int Lambda;
 
-    std::vector<Edge> mstEdges;
+    vector<Vertice> vertices;
+    vector<Edge> edges;
+
+    vector<Edge> mstEdges;
 
     void buildMST();
 
-    cv::Mat computeQFZ(float lambda);
+    Mat computeQFZ(int lambda);
 
-    cv::Mat computeSaliencyMap();
+    Mat computeSaliencyMap();
 
     void saveHierarchy();
     
@@ -61,23 +66,17 @@ private:
 
     void buildGraph();
 
-    cv::Mat renderSegments(
+    Mat renderSegments(
         DisjointSet& ds,
         int width,
         int height,
         ColorMode mode
     );
 
-    cv::Mat renderSegmentsByMeanColor(
-        DisjointSet& ds,
-        int width,
-        int height
-    );
-
 public:
-    MST(std::string& imagePath, float k);
+    MSTB(std::string& imagePath, int Lambda);
 
-    cv::Mat segment();
+    Mat segment();
 };
 
 #endif

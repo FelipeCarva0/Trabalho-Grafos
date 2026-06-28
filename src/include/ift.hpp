@@ -15,7 +15,8 @@ class IFT {
     public:
         enum class ColorMode {
             RGB,
-            GRAYSCALE
+            GRAYSCALE,
+            MEAN_COLOR
         };
 
     private: 
@@ -39,6 +40,8 @@ class IFT {
 
         int n; // Número de sementes
 
+        string imagePath;
+
         Mat image;
         Mat segmentedImage;
 
@@ -57,8 +60,6 @@ class IFT {
         Mat segment();
         int calculateWeight(const Vertice& v1, const Vertice& v2);
         Mat renderSegments(ColorMode mode);
-        Mat renderSegmentsByMeanColor();
-        
 };
 
 #endif // __IFT_HPP__

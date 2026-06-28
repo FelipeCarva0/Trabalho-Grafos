@@ -12,7 +12,8 @@ class MST {
 
     enum class ColorMode {
         RGB,
-        GRAYSCALE
+        GRAYSCALE,
+        MEAN_COLOR
     };
 
     private: 
@@ -50,6 +51,8 @@ class MST {
 
         float k;
 
+        string imagePath;
+
         Mat image;
         Mat segmentedImage;
 
@@ -59,7 +62,6 @@ class MST {
     public:
         MST(string &imagePath, float k); // float K é utilizado na solução A
         Mat renderSegments(DisjointSet& ds, int width, int height, ColorMode mode);
-        Mat renderSegmentsByMeanColor(DisjointSet& ds, int width, int height);
         void buildGraph();
         int calculateWeight(const Vertice& v1, const Vertice& v2);
         float threshold(float k, int size);
