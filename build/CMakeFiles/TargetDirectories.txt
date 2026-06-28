@@ -1,3 +1,0 @@
-C:/Users/thigo/Trabalho-Grafos/build/CMakeFiles/app.dir
-C:/Users/thigo/Trabalho-Grafos/build/CMakeFiles/edit_cache.dir
-C:/Users/thigo/Trabalho-Grafos/build/CMakeFiles/rebuild_cache.dir

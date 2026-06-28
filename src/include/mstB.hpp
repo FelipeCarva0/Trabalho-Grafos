@@ -13,7 +13,8 @@ class MSTB {
 public:
     enum class ColorMode {
         RGB,
-        GRAYSCALE
+        GRAYSCALE,
+        MEAN_COLOR
     };
 
     struct Vertice {
@@ -69,12 +70,6 @@ private:
         int width,
         int height,
         ColorMode mode
-    );
-
-    Mat renderSegmentsByMeanColor(
-        DisjointSet& ds,
-        int width,
-        int height
     );
 
 public:

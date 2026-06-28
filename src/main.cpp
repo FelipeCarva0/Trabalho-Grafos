@@ -46,7 +46,7 @@ int main() {
 
         case 'C':
         case 'c': {
-            cout << "Escolha número de sementes (recomendado: 300): " << endl;
+            cout << "Escolha numero de sementes (recomendado: 300): " << endl;
             int n;
             cin >> n;
             IFT ift(imagePath, n);

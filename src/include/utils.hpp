@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <string>
 
+using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 

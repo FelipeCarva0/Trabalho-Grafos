@@ -1,3 +1,0 @@
-C:\msys64\ucrt64\bin\cmake.exe -E rm -f CMakeFiles\solucaoA.dir/objects.a
-C:\msys64\ucrt64\bin\ar.exe qc CMakeFiles\solucaoA.dir/objects.a @CMakeFiles\solucaoA.dir\objects1.rsp
-C:\msys64\ucrt64\bin\c++.exe -Wl,--whole-archive CMakeFiles\solucaoA.dir/objects.a -Wl,--no-whole-archive -o C:\Users\thigo\Trabalho-Grafos\output\solucaoA.exe -Wl,--out-implib,libsolucaoA.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\solucaoA.dir\linkLibs.rsp

@@ -14,7 +14,7 @@
 No terminal (PowerShell ou MSYS2 UCRT64):
 
 ```bash
-g++ -Wall -Wextra -g3 src/solucaoA.cpp -IC:/msys64/ucrt64/include -IC:/msys64/ucrt64/include/opencv4 -LC:/msys64/ucrt64/lib -lopencv_core -lopencv_imgcodecs -lopencv_highgui -o output/solucaoA.exe
+g++ -Wall -Wextra -g3 src/*.cpp -IC:/msys64/ucrt64/include -IC:/msys64/ucrt64/include/opencv4 -LC:/msys64/ucrt64/lib -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_highgui -o output/app.exe
 ```
 
 ---
@@ -24,5 +24,5 @@ g++ -Wall -Wextra -g3 src/solucaoA.cpp -IC:/msys64/ucrt64/include -IC:/msys64/uc
 Após compilar:
 
 ```bash
-.\output\solucaoA.exe
+.\output\app.exe
 ```
