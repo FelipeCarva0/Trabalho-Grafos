@@ -11,9 +11,8 @@ using namespace cv;
 namespace fs = std::filesystem;
 
 //construtor da MSTB
-MSTB::MSTB(string &imagePath, int Lambda){
+MSTB::MSTB(string &imagePath){
     this->imagePath = imagePath;
-    this->Lambda = Lambda;
 
     image = imread(imagePath, IMREAD_COLOR);
 
@@ -100,7 +99,7 @@ void MSTB::buildMST()
 }
 
 //Computa a segmentação usando o limiar lambda
-Mat MSTB::computeQFZ(int lambda)
+Mat MSTB::computeQFZ(float lambda)
 {
     DisjointSet ds(vertices.size());
 

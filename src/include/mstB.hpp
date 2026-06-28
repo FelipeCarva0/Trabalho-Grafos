@@ -30,16 +30,16 @@ public:
     };
 
     class DisjointSet {
-    public:
-        vector<int> parent;
-        vector<int> size;
-        vector<float> internal_diff;
+        public:
+            vector<int> parent;
+            vector<int> size;
+            vector<float> internal_diff;
 
-        DisjointSet(int n);
+            DisjointSet(int n);
 
-        int find(int u);
-        void unite(int u, int v, int weight);
-    };
+            int find(int u);
+            void unite(int u, int v, int weight);
+        };
 
 private:
     string imagePath;
@@ -47,7 +47,7 @@ private:
     Mat image;
     Mat segmentedImage;
 
-    int Lambda;
+    float Lambda = 40.0f;
 
     vector<Vertice> vertices;
     vector<Edge> edges;
@@ -56,7 +56,7 @@ private:
 
     void buildMST();
 
-    Mat computeQFZ(int lambda);
+    Mat computeQFZ(float lambda);
 
     Mat computeSaliencyMap();
 
@@ -74,7 +74,7 @@ private:
     );
 
 public:
-    MSTB(std::string& imagePath, int Lambda);
+    MSTB(string& imagePath);
 
     Mat segment();
 };

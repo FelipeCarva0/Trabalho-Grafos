@@ -39,10 +39,7 @@ int main() {
 
         case 'B':
         case 'b': {
-            cout << "Escolha valor Lambda (recomendado: 40): " << endl;
-            int lambda;
-            cin >> lambda;
-            MSTB mstB(imagePath, lambda);
+            MSTB mstB(imagePath);
             mstB.segment();
             break;
         }
@@ -64,7 +61,7 @@ int main() {
             MST mst(imagePath, 8000);
             mst.segment();
 
-            MSTB mstB(imagePath, 40);
+            MSTB mstB(imagePath);
             mstB.segment();
 
             IFT ift(imagePath, 300);

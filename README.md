@@ -1,16 +1,16 @@
-# Segmentacao de Imagens Baseada em Grafos
+# Segmentação de Imagens Baseada em Grafos
 
-Projeto em C++/OpenCV com tres abordagens de segmentacao inspiradas em algoritmos classicos de grafos.
+Projeto em C++/OpenCV com três abordagens de segmentação inspiradas em algoritmos clássicos de grafos.
 
-## Visao Geral
+## Visão Geral
 
 Este projeto implementa:
 
-- Solucao A: Efficient Graph-Based Image Segmentation (estilo Felzenszwalb-Huttenlocher).
-- Solucao B: Hierarchical Segmentations with Quasi-Flat Zones (MST + hierarquia por limiar lambda).
-- Solucao C: Image Foresting Transform (IFT) com sementes distribuidas na grade.
+- Solução A: Efficient Graph-Based Image Segmentation (estilo Felzenszwalb-Huttenlocher).
+- Solução B: Hierarchical Segmentations with Quasi-Flat Zones (MST + hierarquia por limiar lambda).
+- Solução C: Image Foresting Transform (IFT) com sementes distribuídas na grade.
 
-Cada solucao gera imagens segmentadas automaticamente em pastas separadas dentro de `assets/output`.
+Cada solução gera imagens segmentadas automaticamente em pastas separadas dentro de `assets/output`.
 
 ## Tecnologias
 
@@ -22,7 +22,7 @@ Cada solucao gera imagens segmentadas automaticamente em pastas separadas dentro
 
 ## Quick Start
 
-### 1) Compilar (gera executavel da main)
+### 1) Compilar (gera executável da main)
 
 ⚠️ Se estiver usando MSYS2 (UCRT64), utilize este comando:
 
@@ -44,19 +44,19 @@ g++ -Wall -Wextra -g3 src/*.cpp -I<PATH_OPEN_CV_INCLUDE> -L<PATH_OPEN_CV_LIB> -l
 
 O fluxo interativo da `main.cpp` pede:
 
-- a solucao (`A`, `B`, `C` ou `T` para todas),
+- a solução (`A`, `B`, `C` ou `T` para todas),
 - a imagem em `assets/images`,
-- e o parametro da tecnica.
+- e o parâmetro da técnica.
 
 ## Uso
 
 Ao executar, informe:
 
-- Solucao A: valor `k` (recomendado: `8000`)
-- Solucao B: valor `lambda` (recomendado: `40`)
-- Solucao C: numero de sementes `n` (recomendado: `300`)
+- Solução A: valor `k` (recomendado: `8000`)
+- Solução B: nenhum valor precisa ser informado
+- Solução C: número de sementes `n` (recomendado: `300`)
 
-Imagens de entrada disponiveis em `assets/images`:
+Imagens de entrada disponíveis em `assets/images`:
 
 - `baseball.jpg`
 - `building.jpg`
@@ -64,17 +64,17 @@ Imagens de entrada disponiveis em `assets/images`:
 - `horse.jpg`
 - `lioness.jpg`
 
-## Saidas Geradas
+## Saídas Geradas
 
-As segmentacoes sao salvas automaticamente em:
+As segmentações são salvas automaticamente em:
 
 - `assets/output/A`
-	- versoes em `rgb`, `gray` e `mean`
+    - versões em `rgb`, `gray` e `mean`
 - `assets/output/B/<nome-da-imagem>`
-	- hierarquia para multiplos valores de `lambda` em `rgb`, `gray` e `mean`
-	- mapa de saliencia: `assets/output/B/<nome-da-imagem>_saliency.<ext>`
+    - hierarquia para múltiplos valores de `lambda` em `rgb`, `gray` e `mean`
+    - mapa de saliência: `assets/output/B/<nome-da-imagem>_saliency.<ext>`
 - `assets/output/C`
-	- versoes em `rgb`, `grayscale` e `mean`
+    - versões em `rgb`, `grayscale` e `mean`
 
 ## Estrutura do Projeto
 
@@ -102,9 +102,9 @@ Trabalho-Grafos/
         `-- utils.hpp
 ```
 
-## Comandos Uteis
+## Comandos Úteis
 
-Recompilar o executavel da main:
+Recompilar o executável da main:
 
 ```bash
 g++ -Wall -Wextra -g3 src/*.cpp -IC:/msys64/ucrt64/include -IC:/msys64/ucrt64/include/opencv4 -LC:/msys64/ucrt64/lib -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_highgui -o output/main.exe
