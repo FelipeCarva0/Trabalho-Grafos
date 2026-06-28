@@ -10,8 +10,6 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-//string imagePath = "assets/images/lioness.jpg";
-
 //--- IFT ---
 
 IFT::IFT(string &imagePath, int n){
@@ -105,6 +103,8 @@ Mat IFT::segment() { // Algoritmo 3
     return segmentedImage;
 }
 
+//--- Construir o grafo ---
+
 void IFT::buildGraph(){ 
     int row = image.rows;
     int col = image.cols;
@@ -158,6 +158,8 @@ void IFT::buildGraph(){
         }
     }
 }
+
+//--- Renderizar segmentos ---
 
 Mat IFT::renderSegments(ColorMode mode)
 {
@@ -282,10 +284,3 @@ Mat IFT::renderSegments(ColorMode mode)
 
     return result;
 }
-
-/*int main() {
-    IFT ift(imagePath, 300);
-    ift.segment();
-
-    return 0;
-}*/

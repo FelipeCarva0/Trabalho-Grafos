@@ -11,6 +11,4 @@ namespace fs = std::filesystem;
 
 void saveSegmentResult(const Mat& img, const string& imageName, const string& suffix, const string& outDir);
 
-void saveSegmentResultSolucaoB(const Mat& img, const string& imageName, const string& suffix, const string& outDir = "assets/output/B");
-
 #endif

@@ -7,19 +7,18 @@
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
-//string imagePath = "assets/images/lioness.jpg";
 
 //construtor da MSTB
-MSTB::MSTB(string &imagePath, float k){
+MSTB::MSTB(string &imagePath, int Lambda){
     this->imagePath = imagePath;
-    this->k = k;
+    this->Lambda = Lambda;
+
     image = imread(imagePath, IMREAD_COLOR);
 
     if(image.empty()){
         cout << "ERRO AO CARREGAR IMAGEM \n" << endl;
     }
 }
-
 
 //função recebe os vertices do grafo e calcula seu peso basaedo na diferença de cores de um pixel para o outro.
 int MSTB::calculateWeight(
@@ -40,7 +39,6 @@ int MSTB::calculateWeight(
         dg*dg +
         dr*dr);
 }
-
 
 //Cria o grafo inicial e define os de pesos de suas arestas.
 void MSTB::buildGraph(){
@@ -97,15 +95,10 @@ void MSTB::buildMST()
             ds.unite(x,y,e.weight);
         }
     }
-
-    cout << "MST criada com "
-         << mstEdges.size()
-         << " arestas" << endl;
 }
 
-
 //Computa a segmentação usando o limiar lambda
-Mat MSTB::computeQFZ(float lambda)
+Mat MSTB::computeQFZ(int lambda)
 {
     DisjointSet ds(vertices.size());
 
@@ -203,11 +196,9 @@ void MSTB::saveHierarchy()
             ds.unite(e.v1, e.v2, e.weight);
         }
 
-        string rootDir =
-            "assets/output/B/" +
-            baseName;
+        string rootDir = "assets/output/B/" + baseName;
 
-        saveSegmentResultSolucaoB(
+        saveSegmentResult(
             renderSegments(
                 ds,
                 image.cols,
@@ -218,7 +209,7 @@ void MSTB::saveHierarchy()
             rootDir + "/rgb"
         );
 
-        saveSegmentResultSolucaoB(
+        saveSegmentResult(
             renderSegments(
                 ds,
                 image.cols,
@@ -229,7 +220,7 @@ void MSTB::saveHierarchy()
             rootDir + "/mean"
         );
 
-        saveSegmentResultSolucaoB(
+        saveSegmentResult(
             renderSegments(
                 ds,
                 image.cols,
@@ -406,7 +397,6 @@ void MSTB::DisjointSet::unite(int u, int v, int weight){
     }
 }
 
-
 //Segmenta a imagem em conjuntos disjuntos (inicialmente cada pixel representando um conjunto) e unifica os conjuntos compativeis
 //Executa o pipeline completo de segmentação
 Mat MSTB::segment()
@@ -417,35 +407,19 @@ Mat MSTB::segment()
 
     saveHierarchy();
 
-    Mat saliency =
-        computeSaliencyMap();
+    Mat saliency = computeSaliencyMap();
 
     fs::path inputPath(imagePath);
 
-    string baseName =
-        inputPath.stem().string();
+    string baseName = inputPath.stem().string();
 
-    string ext =
-        inputPath.extension().string();
+    string ext = inputPath.extension().string();
 
-    string output =
-        "assets/output/B/" +
-        baseName +
-        "_saliency" +
-        ext;
+    string output = "assets/output/B/" + baseName + "_saliency" + ext;
 
     imwrite(output,saliency);
 
-    segmentedImage =
-        computeQFZ(40);
+    segmentedImage = computeQFZ(Lambda);
 
     return segmentedImage;
 }
-
-/*int main() {
-    std::cout << "Solução B" << std::endl;
-    MSTB mstB(imagePath, 0);//o segundo valor não é utilizado na alternativa B.
-    mstB.segment();
-    
-    return 0;
-} */

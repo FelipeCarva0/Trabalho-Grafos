@@ -6,6 +6,7 @@
 
 using namespace std;
 string imagePath = "assets/images/building.jpg";
+string imageName;
 
 int main() {
     cout << "Escolha a solucao (A, B, C ou Todos): \n" << endl;
@@ -20,8 +21,10 @@ int main() {
     char choice;
     cin >> choice;
 
-    //cout << "Digite o caminho da imagem: ";
-    //cin >> imagePath;
+    cout << "Digite o nome da imagem com extensao (ex: cat.png ou building.jpg): ";
+    cin >> imageName;
+
+    imagePath = "assets/images/" + imageName;
 
     switch (choice) {
         case 'A':
@@ -36,10 +39,10 @@ int main() {
 
         case 'B':
         case 'b': {
-            cout << "Escolha valor K (recomendado: 30000): " << endl;
-            float k;
-            cin >> k;
-            MSTB mstB(imagePath, k);
+            cout << "Escolha valor Lambda (recomendado: 40): " << endl;
+            int lambda;
+            cin >> lambda;
+            MSTB mstB(imagePath, lambda);
             mstB.segment();
             break;
         }
@@ -61,7 +64,7 @@ int main() {
             MST mst(imagePath, 8000);
             mst.segment();
 
-            MSTB mstB(imagePath, 30000);
+            MSTB mstB(imagePath, 40);
             mstB.segment();
 
             IFT ift(imagePath, 300);

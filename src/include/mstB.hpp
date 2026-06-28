@@ -43,10 +43,11 @@ public:
 
 private:
     string imagePath;
-    float k;
 
     Mat image;
     Mat segmentedImage;
+
+    int Lambda;
 
     vector<Vertice> vertices;
     vector<Edge> edges;
@@ -55,7 +56,7 @@ private:
 
     void buildMST();
 
-    Mat computeQFZ(float lambda);
+    Mat computeQFZ(int lambda);
 
     Mat computeSaliencyMap();
 
@@ -73,7 +74,7 @@ private:
     );
 
 public:
-    MSTB(std::string& imagePath, float k);
+    MSTB(std::string& imagePath, int Lambda);
 
     Mat segment();
 };

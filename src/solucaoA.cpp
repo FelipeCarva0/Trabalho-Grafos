@@ -9,8 +9,6 @@ using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
 
-//string imagePath = "assets/images/lioness.jpg";
-
 //--- Disjoint Set ---
 
 MST::DisjointSet::DisjointSet(int n){
@@ -70,7 +68,8 @@ int MST::calculateWeight(const Vertice& v1, const Vertice& v2){
     return abs(v1.color[0] - v2.color[0]) + abs(v1.color[1] - v2.color[1]) + abs(v1.color[2] - v2.color[2]);
 }
 
-void MST::buildGraph(){ // grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
+// Grafo construindo com o metodo "Grid Graphs" sessão 5 do artigo
+void MST::buildGraph(){
     int row = image.rows;
     int col = image.cols;
     int numeroVertices = row*col;
@@ -148,6 +147,8 @@ Mat MST::segment(){
     // Passo 4: Retornar a segmentação resultante
     return segmentedImage;
 }
+
+//--- Renderizar segmentos ---
 
 Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
     Mat result(height, width, CV_8UC3);
@@ -276,10 +277,3 @@ Mat MST::renderSegments(DisjointSet& ds, int width, int height, ColorMode mode){
 
     return result;
 }
-
-/*int main(){
-    MST mst(imagePath, 30000.0f);
-    mst.segment();
-    
-    return 0;
-}*/

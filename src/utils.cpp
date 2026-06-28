@@ -27,24 +27,3 @@ void saveSegmentResult(const Mat& img, const string& imageName, const string& su
 
     imwrite(outputPath.string(), img);
 }
-
-//Salva os conjuntos disjuntos que foram mesclados em uma nova imagem
-void saveSegmentResultSolucaoB(const Mat& img, const string& imageName, const string& suffix, const string& outDir){
-    fs::path inputPath(imageName);
-
-    string baseName = inputPath.stem().string();
-    string ext = inputPath.extension().string();
-
-    if (ext.empty()) {
-        ext = ".png"; 
-    }
-
-    fs::path dir(outDir);
-    if (!fs::exists(dir)) {
-        fs::create_directories(dir);
-    }
-
-    fs::path outputPath = dir / (baseName + "_B_" + suffix + ext);
-
-    imwrite(outputPath.string(), img);
-}
